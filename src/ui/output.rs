@@ -6,8 +6,8 @@ use ratatui::{
     Frame,
 };
 
-use crate::app::App;
 use super::{block, grid_shape, split_equal_h, split_equal_v, SPINNER};
+use crate::app::App;
 
 pub(super) fn render_output(f: &mut Frame, app: &App, area: Rect) {
     let n = app.repo_output.len();
@@ -46,9 +46,18 @@ fn render_mini_terminal(f: &mut Frame, app: &App, idx: usize, label: &str, lines
     } else {
         String::new()
     };
-    let border_color = if focused { Color::Cyan } else if app.is_running { Color::Yellow } else { Color::DarkGray };
+    let border_color = if focused {
+        Color::Cyan
+    } else if app.is_running {
+        Color::Yellow
+    } else {
+        Color::DarkGray
+    };
     let title_style = if focused {
-        Style::default().fg(Color::Black).bg(Color::Cyan).add_modifier(Modifier::BOLD)
+        Style::default()
+            .fg(Color::Black)
+            .bg(Color::Cyan)
+            .add_modifier(Modifier::BOLD)
     } else {
         Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)
     };
@@ -75,7 +84,10 @@ fn render_mini_terminal(f: &mut Frame, app: &App, idx: usize, label: &str, lines
 
 pub(crate) fn colorize_output_line(line: &str) -> Line<'_> {
     if line.starts_with("\n=== ") || line.starts_with("=== ") {
-        Line::from(Span::styled(line.trim_start(), Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)))
+        Line::from(Span::styled(
+            line.trim_start(),
+            Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
+        ))
     } else if line.starts_with("⚠") {
         Line::from(Span::styled(line, Style::default().fg(Color::Yellow)))
     } else if line.starts_with("✗") {
@@ -101,13 +113,13 @@ mod tests {
 
     #[test]
     fn colorize_check_ok() {
-        assert_eq!(fg(&colorize_output_line("✓ done")),               Some(Color::Green));
-        assert_eq!(fg(&colorize_output_line("✗ error")),              Some(Color::Red));
-        assert_eq!(fg(&colorize_output_line("⚠ warn")),               Some(Color::Yellow));
-        assert_eq!(fg(&colorize_output_line("Already up to date")),   Some(Color::DarkGray));
+        assert_eq!(fg(&colorize_output_line("✓ done")), Some(Color::Green));
+        assert_eq!(fg(&colorize_output_line("✗ error")), Some(Color::Red));
+        assert_eq!(fg(&colorize_output_line("⚠ warn")), Some(Color::Yellow));
+        assert_eq!(fg(&colorize_output_line("Already up to date")), Some(Color::DarkGray));
         assert_eq!(fg(&colorize_output_line("Successfully rebased")), Some(Color::Green));
-        assert_eq!(fg(&colorize_output_line("Fast-forward")),         Some(Color::Green));
-        assert_eq!(fg(&colorize_output_line("normal text")),          Some(Color::White));
-        assert_eq!(fg(&colorize_output_line("=== header")),           Some(Color::Cyan));
+        assert_eq!(fg(&colorize_output_line("Fast-forward")), Some(Color::Green));
+        assert_eq!(fg(&colorize_output_line("normal text")), Some(Color::White));
+        assert_eq!(fg(&colorize_output_line("=== header")), Some(Color::Cyan));
     }
 }

@@ -19,10 +19,7 @@ mod ui;
 use anyhow::Result;
 use app::App;
 use crossterm::{
-    event::{
-        self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind,
-        MouseButton, MouseEventKind,
-    },
+    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEventKind, MouseButton, MouseEventKind},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
@@ -58,10 +55,7 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-async fn run_app(
-    terminal: &mut Terminal<CrosstermBackend<io::Stdout>>,
-    app: &mut App,
-) -> Result<()> {
+async fn run_app(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>, app: &mut App) -> Result<()> {
     let mut tick = interval(Duration::from_millis(100));
 
     loop {
@@ -75,10 +69,7 @@ async fn run_app(
         app.drain_ci();
         app.drain_prs();
 
-        if !app.is_running
-            && app.auto_refresh
-            && app.last_refresh.elapsed() > Duration::from_secs(30)
-        {
+        if !app.is_running && app.auto_refresh && app.last_refresh.elapsed() > Duration::from_secs(30) {
             app.refresh().await;
         }
 
@@ -92,7 +83,9 @@ async fn run_app(
                     if is_nav && nav_done {
                         continue;
                     }
-                    if is_nav { nav_done = true; }
+                    if is_nav {
+                        nav_done = true;
+                    }
                     if handle_key(app, key.code).await? {
                         return Ok(());
                     }
@@ -112,9 +105,7 @@ fn handle_click(app: &mut App, col: u16, row: u16, size: Rect) {
     }
     let rects = ui::pane_rects(size, app.repo_output.len());
     for (i, rect) in rects.iter().enumerate() {
-        if col >= rect.x && col < rect.x + rect.width
-            && row >= rect.y && row < rect.y + rect.height
-        {
+        if col >= rect.x && col < rect.x + rect.width && row >= rect.y && row < rect.y + rect.height {
             if app.focused_pane == Some(i) {
                 // second click → open input for this repo
                 open_pane_input(app, i);
@@ -141,8 +132,16 @@ async fn handle_key(app: &mut App, code: KeyCode) -> Result<bool> {
     if app.ci_mode {
         match code {
             KeyCode::Esc | KeyCode::Char('q') => app.ci_mode = false,
-            KeyCode::Up => { if app.ci_index > 0 { app.ci_index -= 1; } }
-            KeyCode::Down => { if app.ci_index + 1 < app.ci_list.len() { app.ci_index += 1; } }
+            KeyCode::Up => {
+                if app.ci_index > 0 {
+                    app.ci_index -= 1;
+                }
+            }
+            KeyCode::Down => {
+                if app.ci_index + 1 < app.ci_list.len() {
+                    app.ci_index += 1;
+                }
+            }
             KeyCode::Enter | KeyCode::Char('o') => app.ci_open_web(),
             KeyCode::Char('l') => app.ci_show_logs(),
             KeyCode::Char('R') => app.ci_rerun(),
@@ -155,10 +154,14 @@ async fn handle_key(app: &mut App, code: KeyCode) -> Result<bool> {
         match code {
             KeyCode::Esc | KeyCode::Char('q') => app.pr_mode = false,
             KeyCode::Up => {
-                if app.pr_index > 0 { app.pr_index -= 1; }
+                if app.pr_index > 0 {
+                    app.pr_index -= 1;
+                }
             }
             KeyCode::Down => {
-                if app.pr_index + 1 < app.pr_list.len() { app.pr_index += 1; }
+                if app.pr_index + 1 < app.pr_list.len() {
+                    app.pr_index += 1;
+                }
             }
             KeyCode::Enter | KeyCode::Char('o') => app.pr_open_web(),
             KeyCode::Char('c') => app.pr_checkout(),
@@ -204,7 +207,10 @@ async fn handle_key(app: &mut App, code: KeyCode) -> Result<bool> {
                     };
                     if let Some(name) = target {
                         if let Some(repo) = app.repos.iter().find(|r| r.name == name).cloned() {
-                            let t = engine::Target { label: repo.name.clone(), workdir: repo.path.clone() };
+                            let t = engine::Target {
+                                label: repo.name.clone(),
+                                workdir: repo.path.clone(),
+                            };
                             app.run_on(vec![t], &program, &args_str);
                         }
                     } else if program == "git" {
@@ -214,8 +220,12 @@ async fn handle_key(app: &mut App, code: KeyCode) -> Result<bool> {
                     }
                 }
             }
-            KeyCode::Backspace => { app.input_buffer.pop(); }
-            KeyCode::Char(c) => { app.input_buffer.push(c); }
+            KeyCode::Backspace => {
+                app.input_buffer.pop();
+            }
+            KeyCode::Char(c) => {
+                app.input_buffer.push(c);
+            }
             _ => {}
         }
         return Ok(false);
@@ -224,8 +234,14 @@ async fn handle_key(app: &mut App, code: KeyCode) -> Result<bool> {
     // focused pane shortcuts
     if let Some(i) = app.focused_pane {
         match code {
-            KeyCode::Esc => { app.focused_pane = None; return Ok(false); }
-            KeyCode::Enter | KeyCode::Char('c') => { open_pane_input(app, i); return Ok(false); }
+            KeyCode::Esc => {
+                app.focused_pane = None;
+                return Ok(false);
+            }
+            KeyCode::Enter | KeyCode::Char('c') => {
+                open_pane_input(app, i);
+                return Ok(false);
+            }
             _ => {}
         }
     }
@@ -234,7 +250,7 @@ async fn handle_key(app: &mut App, code: KeyCode) -> Result<bool> {
         KeyCode::Char('q') => return Ok(true),
         KeyCode::Char('h') => app.show_help = !app.show_help,
         KeyCode::Esc => app.focused_pane = None,
-        KeyCode::Up   => app.previous(),
+        KeyCode::Up => app.previous(),
         KeyCode::Down => app.next(),
         KeyCode::Enter | KeyCode::Char('s') => app.show_details(),
 
@@ -285,4 +301,3 @@ async fn handle_key(app: &mut App, code: KeyCode) -> Result<bool> {
     }
     Ok(false)
 }
-

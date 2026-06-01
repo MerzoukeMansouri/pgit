@@ -1,6 +1,6 @@
-use tokio::sync::mpsc;
-use crate::{engine::Target, types::CiRun};
 use super::App;
+use crate::{engine::Target, types::CiRun};
+use tokio::sync::mpsc;
 
 impl App {
     pub fn fetch_runs(&mut self, all: bool) {
@@ -24,35 +24,50 @@ impl App {
                 tokio::spawn(async move {
                     let out = tokio::process::Command::new("gh")
                         .args([
-                            "run", "list", "--workflow", &wf,
-                            "--json", "databaseId,workflowName,status,conclusion,headBranch,event,createdAt",
-                            "--limit", "1",
+                            "run",
+                            "list",
+                            "--workflow",
+                            &wf,
+                            "--json",
+                            "databaseId,workflowName,status,conclusion,headBranch,event,createdAt",
+                            "--limit",
+                            "1",
                         ])
                         .current_dir(&r.path)
                         .output()
                         .await;
                     let Ok(o) = out else { return };
-                    if !o.status.success() { return; }
+                    if !o.status.success() {
+                        return;
+                    }
                     let json = String::from_utf8_lossy(&o.stdout);
-                    let Ok(vals) = serde_json::from_str::<Vec<serde_json::Value>>(&json) else { return };
+                    let Ok(vals) = serde_json::from_str::<Vec<serde_json::Value>>(&json) else {
+                        return;
+                    };
                     let Some(v) = vals.into_iter().next() else { return };
-                    if let Some(run) = (|| -> Option<CiRun> { Some(CiRun {
-                        repo: r.name.clone(),
-                        repo_path: r.path.clone(),
-                        id: v["databaseId"].as_u64()?,
-                        workflow: v["workflowName"].as_str().unwrap_or(&wf).to_string(),
-                        status: v["status"].as_str().unwrap_or("").to_string(),
-                        conclusion: v["conclusion"].as_str().unwrap_or("").to_string(),
-                        branch: v["headBranch"].as_str().unwrap_or("").to_string(),
-                        event: v["event"].as_str().unwrap_or("").to_string(),
-                        created_at: v["createdAt"].as_str().unwrap_or("").chars().take(16).collect(),
-                    })})() {
+                    if let Some(run) = (|| -> Option<CiRun> {
+                        Some(CiRun {
+                            repo: r.name.clone(),
+                            repo_path: r.path.clone(),
+                            id: v["databaseId"].as_u64()?,
+                            workflow: v["workflowName"].as_str().unwrap_or(&wf).to_string(),
+                            status: v["status"].as_str().unwrap_or("").to_string(),
+                            conclusion: v["conclusion"].as_str().unwrap_or("").to_string(),
+                            branch: v["headBranch"].as_str().unwrap_or("").to_string(),
+                            event: v["event"].as_str().unwrap_or("").to_string(),
+                            created_at: v["createdAt"].as_str().unwrap_or("").chars().take(16).collect(),
+                        })
+                    })() {
                         let _ = tx.send(run);
                     }
                 })
             })
             .collect();
-        tokio::spawn(async move { for t in tasks { t.await.ok(); } });
+        tokio::spawn(async move {
+            for t in tasks {
+                t.await.ok();
+            }
+        });
         drop(tx);
 
         self.ci_list = vec![];
@@ -74,7 +89,10 @@ impl App {
             self.status_line = if self.ci_list.is_empty() {
                 "No CI runs found.".to_string()
             } else {
-                format!("{} run(s)  ·  Enter open  ·  l details  ·  R re-run  ·  Esc close", self.ci_list.len())
+                format!(
+                    "{} run(s)  ·  Enter open  ·  l details  ·  R re-run  ·  Esc close",
+                    self.ci_list.len()
+                )
             };
         }
         done
@@ -101,7 +119,10 @@ impl App {
     pub fn ci_show_logs(&mut self) {
         if let Some(run) = self.ci_list.get(self.ci_index).cloned() {
             let id = run.id.to_string();
-            let target = Target { label: run.workflow.clone(), workdir: run.repo_path.clone() };
+            let target = Target {
+                label: run.workflow.clone(),
+                workdir: run.repo_path.clone(),
+            };
             self.ci_mode = false;
             self.run_on(vec![target], "gh", &["run", "view", &id]);
         }
@@ -111,10 +132,10 @@ impl App {
 pub(crate) fn ci_sort_key(status: &str, conclusion: &str) -> u8 {
     match (status, conclusion) {
         ("in_progress", _) => 0,
-        ("queued", _)      => 1,
-        (_, "failure")     => 2,
-        (_, "success")     => 3,
-        _                  => 4,
+        ("queued", _) => 1,
+        (_, "failure") => 2,
+        (_, "success") => 3,
+        _ => 4,
     }
 }
 
@@ -124,7 +145,8 @@ fn workflow_files(repo_path: &std::path::Path) -> Vec<String> {
             d.filter_map(Result::ok)
                 .filter_map(|e| {
                     let name = e.file_name().to_string_lossy().to_string();
-                    let ext = std::path::Path::new(&name).extension()
+                    let ext = std::path::Path::new(&name)
+                        .extension()
                         .and_then(|s| s.to_str())
                         .map(str::to_ascii_lowercase);
                     matches!(ext.as_deref(), Some("yml" | "yaml")).then_some(name)
@@ -142,9 +164,9 @@ mod tests {
     #[test]
     fn sort_key_order() {
         assert!(ci_sort_key("in_progress", "") < ci_sort_key("queued", ""));
-        assert!(ci_sort_key("queued", "")      < ci_sort_key("", "failure"));
-        assert!(ci_sort_key("", "failure")     < ci_sort_key("", "success"));
-        assert!(ci_sort_key("", "success")     < ci_sort_key("", "unknown"));
+        assert!(ci_sort_key("queued", "") < ci_sort_key("", "failure"));
+        assert!(ci_sort_key("", "failure") < ci_sort_key("", "success"));
+        assert!(ci_sort_key("", "success") < ci_sort_key("", "unknown"));
     }
 
     #[test]
@@ -152,8 +174,8 @@ mod tests {
         let base = std::env::temp_dir().join(format!("gitp_wf_{}", std::process::id()));
         let wf_dir = base.join(".github/workflows");
         fs::create_dir_all(&wf_dir).unwrap();
-        fs::write(wf_dir.join("ci.yml"),   "").unwrap();
-        fs::write(wf_dir.join("cd.yaml"),  "").unwrap();
+        fs::write(wf_dir.join("ci.yml"), "").unwrap();
+        fs::write(wf_dir.join("cd.yaml"), "").unwrap();
         fs::write(wf_dir.join("notes.md"), "").unwrap();
         let mut files = workflow_files(&base);
         files.sort();

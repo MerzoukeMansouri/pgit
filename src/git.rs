@@ -1,6 +1,6 @@
+use crate::types::{GitRepo, RepoStatus};
 use anyhow::Result;
 use std::{fs, process::Command};
-use crate::types::{GitRepo, RepoStatus};
 
 pub fn find_repos(base_path: &str) -> Result<Vec<GitRepo>> {
     let mut repos = Vec::new();
@@ -125,4 +125,3 @@ mod tests {
         fs::remove_dir_all(&base).unwrap();
     }
 }
-

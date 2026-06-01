@@ -1,6 +1,6 @@
-use tokio::sync::mpsc;
-use crate::{engine::Target, types::PrItem};
 use super::App;
+use crate::{engine::Target, types::PrItem};
+use tokio::sync::mpsc;
 
 impl App {
     pub fn fetch_prs(&mut self, all: bool) {
@@ -13,33 +13,53 @@ impl App {
         };
 
         let (tx, rx) = mpsc::unbounded_channel::<PrItem>();
-        let tasks: Vec<_> = repos.into_iter().map(|r| {
-            let tx = tx.clone();
-            tokio::spawn(async move {
-                let out = tokio::process::Command::new("gh")
-                    .args(["pr", "list", "--json", "number,title,author,headRefName,url", "--limit", "50"])
-                    .current_dir(&r.path)
-                    .output()
-                    .await;
-                let Ok(o) = out else { return };
-                if !o.status.success() { return; }
-                let json = String::from_utf8_lossy(&o.stdout);
-                let Ok(vals) = serde_json::from_str::<Vec<serde_json::Value>>(&json) else { return };
-                for v in vals {
-                    if let Some(pr) = (|| Some(PrItem {
-                        repo: r.name.clone(),
-                        number: v["number"].as_u64()?,
-                        title: v["title"].as_str()?.to_string(),
-                        author: v["author"]["login"].as_str().unwrap_or("unknown").to_string(),
-                        branch: v["headRefName"].as_str()?.to_string(),
-                        url: v["url"].as_str()?.to_string(),
-                    }))() {
-                        let _ = tx.send(pr);
+        let tasks: Vec<_> = repos
+            .into_iter()
+            .map(|r| {
+                let tx = tx.clone();
+                tokio::spawn(async move {
+                    let out = tokio::process::Command::new("gh")
+                        .args([
+                            "pr",
+                            "list",
+                            "--json",
+                            "number,title,author,headRefName,url",
+                            "--limit",
+                            "50",
+                        ])
+                        .current_dir(&r.path)
+                        .output()
+                        .await;
+                    let Ok(o) = out else { return };
+                    if !o.status.success() {
+                        return;
                     }
-                }
+                    let json = String::from_utf8_lossy(&o.stdout);
+                    let Ok(vals) = serde_json::from_str::<Vec<serde_json::Value>>(&json) else {
+                        return;
+                    };
+                    for v in vals {
+                        if let Some(pr) = (|| {
+                            Some(PrItem {
+                                repo: r.name.clone(),
+                                number: v["number"].as_u64()?,
+                                title: v["title"].as_str()?.to_string(),
+                                author: v["author"]["login"].as_str().unwrap_or("unknown").to_string(),
+                                branch: v["headRefName"].as_str()?.to_string(),
+                                url: v["url"].as_str()?.to_string(),
+                            })
+                        })() {
+                            let _ = tx.send(pr);
+                        }
+                    }
+                })
             })
-        }).collect();
-        tokio::spawn(async move { for t in tasks { t.await.ok(); } });
+            .collect();
+        tokio::spawn(async move {
+            for t in tasks {
+                t.await.ok();
+            }
+        });
         drop(tx);
 
         self.pr_list = vec![];
@@ -57,7 +77,10 @@ impl App {
             self.status_line = if self.pr_list.is_empty() {
                 "No open PRs found.".to_string()
             } else {
-                format!("{} open PR(s)  ·  Enter/o open  ·  c checkout  ·  Esc close", self.pr_list.len())
+                format!(
+                    "{} open PR(s)  ·  Enter/o open  ·  c checkout  ·  Esc close",
+                    self.pr_list.len()
+                )
             };
         }
     }
@@ -69,10 +92,17 @@ impl App {
     }
 
     pub fn pr_checkout(&mut self) {
-        let Some(pr) = self.pr_list.get(self.pr_index).cloned() else { return };
-        let Some(repo) = self.repos.iter().find(|r| r.name == pr.repo).cloned() else { return };
+        let Some(pr) = self.pr_list.get(self.pr_index).cloned() else {
+            return;
+        };
+        let Some(repo) = self.repos.iter().find(|r| r.name == pr.repo).cloned() else {
+            return;
+        };
         self.pr_mode = false;
-        let target = Target { label: repo.name.clone(), workdir: repo.path.clone() };
+        let target = Target {
+            label: repo.name.clone(),
+            workdir: repo.path.clone(),
+        };
         self.run_on(vec![target], "git", &["checkout", &pr.branch]);
     }
 }

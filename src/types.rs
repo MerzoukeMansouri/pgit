@@ -44,4 +44,3 @@ pub struct PrItem {
     pub branch: String,
     pub url: String,
 }
-

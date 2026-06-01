@@ -60,7 +60,10 @@ mod tests {
     async fn run_captures_stdout() {
         let dir = std::env::temp_dir();
         let mut rx = run(
-            vec![Target { label: "t".into(), workdir: dir }],
+            vec![Target {
+                label: "t".into(),
+                workdir: dir,
+            }],
             "echo".into(),
             vec!["hello_gitp".into()],
         );
@@ -78,8 +81,14 @@ mod tests {
     async fn run_parallel_labels() {
         let dir = std::env::temp_dir();
         let targets = vec![
-            Target { label: "a".into(), workdir: dir.clone() },
-            Target { label: "b".into(), workdir: dir },
+            Target {
+                label: "a".into(),
+                workdir: dir.clone(),
+            },
+            Target {
+                label: "b".into(),
+                workdir: dir,
+            },
         ];
         let mut rx = run(targets, "echo".into(), vec!["ok".into()]);
         let mut labels = vec![];
@@ -94,7 +103,10 @@ mod tests {
     async fn run_bad_command_produces_error_line() {
         let dir = std::env::temp_dir();
         let mut rx = run(
-            vec![Target { label: "err".into(), workdir: dir }],
+            vec![Target {
+                label: "err".into(),
+                workdir: dir,
+            }],
             "this_cmd_does_not_exist_gitp".into(),
             vec![],
         );

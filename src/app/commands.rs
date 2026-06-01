@@ -1,14 +1,25 @@
-use crate::engine::{self, Target};
 use super::App;
+use crate::engine::{self, Target};
 
 impl App {
     pub fn run_cmd(&mut self, program: &str, args: &[&str], all: bool) {
-        if self.is_running { return; }
+        if self.is_running {
+            return;
+        }
         let targets: Vec<Target> = if all {
-            self.repos.iter().map(|r| Target { label: r.name.clone(), workdir: r.path.clone() }).collect()
+            self.repos
+                .iter()
+                .map(|r| Target {
+                    label: r.name.clone(),
+                    workdir: r.path.clone(),
+                })
+                .collect()
         } else if !self.repos.is_empty() {
             let r = &self.repos[self.current_index];
-            vec![Target { label: r.name.clone(), workdir: r.path.clone() }]
+            vec![Target {
+                label: r.name.clone(),
+                workdir: r.path.clone(),
+            }]
         } else {
             self.repo_output = vec![("gitp".to_string(), vec!["⚠ No repositories available".to_string()])];
             return;
@@ -17,7 +28,9 @@ impl App {
     }
 
     pub fn run_on(&mut self, targets: Vec<Target>, program: &str, args: &[&str]) {
-        if self.is_running || targets.is_empty() { return; }
+        if self.is_running || targets.is_empty() {
+            return;
+        }
         let label = if targets.len() == 1 {
             targets[0].label.clone()
         } else {
@@ -36,21 +49,37 @@ impl App {
     }
 
     pub fn discard_dirty(&mut self, all: bool) {
-        if self.is_running { return; }
+        if self.is_running {
+            return;
+        }
         let candidates: Vec<_> = if all {
-            self.repos.iter().filter(|r| r.modified > 0 || r.staged > 0 || r.untracked > 0).cloned().collect()
+            self.repos
+                .iter()
+                .filter(|r| r.modified > 0 || r.staged > 0 || r.untracked > 0)
+                .cloned()
+                .collect()
         } else if !self.repos.is_empty() {
             let r = &self.repos[self.current_index];
-            if r.modified > 0 || r.staged > 0 || r.untracked > 0 { vec![r.clone()] } else { vec![] }
+            if r.modified > 0 || r.staged > 0 || r.untracked > 0 {
+                vec![r.clone()]
+            } else {
+                vec![]
+            }
         } else {
             vec![]
         };
         let targets: Vec<Target> = candidates
             .into_iter()
-            .map(|r| Target { label: r.name.clone(), workdir: r.path.clone() })
+            .map(|r| Target {
+                label: r.name.clone(),
+                workdir: r.path.clone(),
+            })
             .collect();
         if targets.is_empty() {
-            self.repo_output = vec![("gitp".to_string(), vec!["✓ Nothing to discard — all repos clean.".to_string()])];
+            self.repo_output = vec![(
+                "gitp".to_string(),
+                vec!["✓ Nothing to discard — all repos clean.".to_string()],
+            )];
             self.status_line = "Nothing to discard.".to_string();
             return;
         }

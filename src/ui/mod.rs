@@ -41,7 +41,9 @@ pub fn draw(f: &mut Frame, app: &App) {
 /// Compute output grid pane rects from the full terminal area.
 /// Used for mouse click hit-testing — mirrors render_output layout exactly.
 pub fn pane_rects(terminal_area: Rect, n: usize) -> Vec<Rect> {
-    if n == 0 { return vec![]; }
+    if n == 0 {
+        return vec![];
+    }
     let h = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([Constraint::Percentage(30), Constraint::Min(1)])
@@ -65,7 +67,12 @@ pub fn pane_rects(terminal_area: Rect, n: usize) -> Vec<Rect> {
 // ── shared layout helpers (pub(super) → accessible to submodules) ─────────────
 
 pub(super) fn grid_shape(n: usize) -> (usize, usize) {
-    let cols = match n { 1 => 1, 2..=4 => 2, 5..=9 => 3, _ => 4 };
+    let cols = match n {
+        1 => 1,
+        2..=4 => 2,
+        5..=9 => 3,
+        _ => 4,
+    };
     (cols, n.div_ceil(cols))
 }
 
@@ -80,7 +87,13 @@ pub(super) fn split_h<const N: usize>(area: Rect, pcts: [u16; N]) -> [Rect; N] {
 pub(super) fn split_v<const N: usize>(area: Rect, lengths: [u16; N]) -> [Rect; N] {
     let constraints: Vec<Constraint> = lengths
         .iter()
-        .map(|&l| if l == 0 { Constraint::Min(1) } else { Constraint::Length(l) })
+        .map(|&l| {
+            if l == 0 {
+                Constraint::Min(1)
+            } else {
+                Constraint::Length(l)
+            }
+        })
         .collect();
     let chunks = Layout::default()
         .direction(Direction::Vertical)
@@ -90,31 +103,67 @@ pub(super) fn split_v<const N: usize>(area: Rect, lengths: [u16; N]) -> [Rect; N
 }
 
 pub(super) fn split_equal_h(area: Rect, n: usize) -> Vec<Rect> {
-    if n == 0 { return vec![]; }
+    if n == 0 {
+        return vec![];
+    }
     let pct = 100u16 / n as u16;
     let constraints: Vec<Constraint> = (0..n)
-        .map(|i| if i == n - 1 { Constraint::Min(1) } else { Constraint::Percentage(pct) })
+        .map(|i| {
+            if i == n - 1 {
+                Constraint::Min(1)
+            } else {
+                Constraint::Percentage(pct)
+            }
+        })
         .collect();
-    Layout::default().direction(Direction::Horizontal).constraints(constraints).split(area).to_vec()
+    Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints(constraints)
+        .split(area)
+        .to_vec()
 }
 
 pub(super) fn split_equal_v(area: Rect, n: usize) -> Vec<Rect> {
-    if n == 0 { return vec![]; }
+    if n == 0 {
+        return vec![];
+    }
     let pct = 100u16 / n as u16;
     let constraints: Vec<Constraint> = (0..n)
-        .map(|i| if i == n - 1 { Constraint::Min(1) } else { Constraint::Percentage(pct) })
+        .map(|i| {
+            if i == n - 1 {
+                Constraint::Min(1)
+            } else {
+                Constraint::Percentage(pct)
+            }
+        })
         .collect();
-    Layout::default().direction(Direction::Vertical).constraints(constraints).split(area).to_vec()
+    Layout::default()
+        .direction(Direction::Vertical)
+        .constraints(constraints)
+        .split(area)
+        .to_vec()
 }
 
 pub(super) fn block(title: &str, active: bool) -> ratatui::widgets::Block<'_> {
-    use ratatui::{style::{Color, Style}, text::Span, widgets::{Block, BorderType, Borders}, style::Modifier};
-    let border_style = if active { Style::default().fg(Color::Cyan) } else { Style::default().fg(Color::DarkGray) };
+    use ratatui::{
+        style::Modifier,
+        style::{Color, Style},
+        text::Span,
+        widgets::{Block, BorderType, Borders},
+    };
+    let border_style = if active {
+        Style::default().fg(Color::Cyan)
+    } else {
+        Style::default().fg(Color::DarkGray)
+    };
     Block::default()
         .borders(Borders::ALL)
         .border_type(BorderType::Rounded)
         .border_style(border_style)
-        .title(Span::styled(format!(" {title} "), Style::default().fg(Color::White).add_modifier(Modifier::BOLD)))
+        .title(Span::styled(
+            format!(" {title} "),
+            Style::default().fg(Color::White).add_modifier(Modifier::BOLD),
+        ))
 }
 
 pub(super) const SPINNER: &[char] = &['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
@@ -125,12 +174,12 @@ mod tests {
 
     #[test]
     fn grid_shape_boundaries() {
-        assert_eq!(grid_shape(1),  (1, 1));
-        assert_eq!(grid_shape(2),  (2, 1));
-        assert_eq!(grid_shape(3),  (2, 2));
-        assert_eq!(grid_shape(4),  (2, 2));
-        assert_eq!(grid_shape(5),  (3, 2));
-        assert_eq!(grid_shape(9),  (3, 3));
+        assert_eq!(grid_shape(1), (1, 1));
+        assert_eq!(grid_shape(2), (2, 1));
+        assert_eq!(grid_shape(3), (2, 2));
+        assert_eq!(grid_shape(4), (2, 2));
+        assert_eq!(grid_shape(5), (3, 2));
+        assert_eq!(grid_shape(9), (3, 3));
         assert_eq!(grid_shape(10), (4, 3));
         assert_eq!(grid_shape(12), (4, 3));
         assert_eq!(grid_shape(13), (4, 4));

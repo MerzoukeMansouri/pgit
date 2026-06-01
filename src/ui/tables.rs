@@ -10,23 +10,33 @@ use crate::app::App;
 
 pub(super) fn render_pr_list(f: &mut Frame, app: &App, area: Rect) {
     let header = Row::new(vec!["Repo", "#", "Title", "Author", "Branch"])
-        .style(Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD | Modifier::UNDERLINED))
+        .style(
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD | Modifier::UNDERLINED),
+        )
         .height(1);
 
-    let rows: Vec<Row> = app.pr_list.iter().enumerate().map(|(i, pr)| {
-        let style = if i == app.pr_index {
-            Style::default().bg(Color::DarkGray).add_modifier(Modifier::BOLD)
-        } else {
-            Style::default().fg(Color::White)
-        };
-        Row::new(vec![
-            Cell::from(pr.repo.clone()).style(Style::default().fg(Color::Cyan)),
-            Cell::from(format!("#{}", pr.number)).style(Style::default().fg(Color::Yellow)),
-            Cell::from(pr.title.clone()),
-            Cell::from(pr.author.clone()).style(Style::default().fg(Color::DarkGray)),
-            Cell::from(pr.branch.clone()).style(Style::default().fg(Color::Blue)),
-        ]).style(style)
-    }).collect();
+    let rows: Vec<Row> = app
+        .pr_list
+        .iter()
+        .enumerate()
+        .map(|(i, pr)| {
+            let style = if i == app.pr_index {
+                Style::default().bg(Color::DarkGray).add_modifier(Modifier::BOLD)
+            } else {
+                Style::default().fg(Color::White)
+            };
+            Row::new(vec![
+                Cell::from(pr.repo.clone()).style(Style::default().fg(Color::Cyan)),
+                Cell::from(format!("#{}", pr.number)).style(Style::default().fg(Color::Yellow)),
+                Cell::from(pr.title.clone()),
+                Cell::from(pr.author.clone()).style(Style::default().fg(Color::DarkGray)),
+                Cell::from(pr.branch.clone()).style(Style::default().fg(Color::Blue)),
+            ])
+            .style(style)
+        })
+        .collect();
 
     let widths = [
         Constraint::Percentage(18),
@@ -53,7 +63,10 @@ pub(super) fn render_pr_list(f: &mut Frame, app: &App, area: Rect) {
                     .borders(Borders::ALL)
                     .border_type(BorderType::Rounded)
                     .border_style(Style::default().fg(Color::Magenta))
-                    .title(Span::styled(title, Style::default().fg(Color::White).add_modifier(Modifier::BOLD)))
+                    .title(Span::styled(
+                        title,
+                        Style::default().fg(Color::White).add_modifier(Modifier::BOLD),
+                    ))
                     .title_bottom(Span::styled(
                         " Enter/o open in browser  ·  c checkout  ·  Esc close ",
                         Style::default().fg(Color::DarkGray),
@@ -66,22 +79,36 @@ pub(super) fn render_pr_list(f: &mut Frame, app: &App, area: Rect) {
 
 pub(super) fn render_ci_list(f: &mut Frame, app: &App, area: Rect) {
     let header = Row::new(vec!["", "Repo", "Workflow", "Branch", "Event", "Started"])
-        .style(Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD | Modifier::UNDERLINED))
+        .style(
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD | Modifier::UNDERLINED),
+        )
         .height(1);
 
-    let rows: Vec<Row> = app.ci_list.iter().enumerate().map(|(i, run)| {
-        let (sym, color) = ci_sym(&run.status, &run.conclusion);
-        let sel = i == app.ci_index;
-        let base = if sel { Style::default().bg(Color::DarkGray).add_modifier(Modifier::BOLD) } else { Style::default() };
-        Row::new(vec![
-            Cell::from(sym).style(Style::default().fg(color)),
-            Cell::from(run.repo.clone()).style(Style::default().fg(Color::Cyan)),
-            Cell::from(run.workflow.clone()),
-            Cell::from(run.branch.clone()).style(Style::default().fg(Color::Blue)),
-            Cell::from(run.event.clone()).style(Style::default().fg(Color::DarkGray)),
-            Cell::from(run.created_at.clone()).style(Style::default().fg(Color::DarkGray)),
-        ]).style(base)
-    }).collect();
+    let rows: Vec<Row> = app
+        .ci_list
+        .iter()
+        .enumerate()
+        .map(|(i, run)| {
+            let (sym, color) = ci_sym(&run.status, &run.conclusion);
+            let sel = i == app.ci_index;
+            let base = if sel {
+                Style::default().bg(Color::DarkGray).add_modifier(Modifier::BOLD)
+            } else {
+                Style::default()
+            };
+            Row::new(vec![
+                Cell::from(sym).style(Style::default().fg(color)),
+                Cell::from(run.repo.clone()).style(Style::default().fg(Color::Cyan)),
+                Cell::from(run.workflow.clone()),
+                Cell::from(run.branch.clone()).style(Style::default().fg(Color::Blue)),
+                Cell::from(run.event.clone()).style(Style::default().fg(Color::DarkGray)),
+                Cell::from(run.created_at.clone()).style(Style::default().fg(Color::DarkGray)),
+            ])
+            .style(base)
+        })
+        .collect();
 
     let widths = [
         Constraint::Length(2),
@@ -119,13 +146,13 @@ pub(super) fn render_ci_list(f: &mut Frame, app: &App, area: Rect) {
 
 pub(crate) fn ci_sym(status: &str, conclusion: &str) -> (&'static str, Color) {
     match (status, conclusion) {
-        ("in_progress", _)  => ("⟳", Color::Yellow),
-        ("queued", _)       => ("◌", Color::Yellow),
-        (_, "success")      => ("✓", Color::Green),
-        (_, "failure")      => ("✗", Color::Red),
-        (_, "cancelled")    => ("○", Color::DarkGray),
-        (_, "skipped")      => ("–", Color::DarkGray),
-        _                   => ("?", Color::DarkGray),
+        ("in_progress", _) => ("⟳", Color::Yellow),
+        ("queued", _) => ("◌", Color::Yellow),
+        (_, "success") => ("✓", Color::Green),
+        (_, "failure") => ("✗", Color::Red),
+        (_, "cancelled") => ("○", Color::DarkGray),
+        (_, "skipped") => ("–", Color::DarkGray),
+        _ => ("?", Color::DarkGray),
     }
 }
 
@@ -135,10 +162,10 @@ mod tests {
 
     #[test]
     fn ci_sym_mapping() {
-        assert_eq!(ci_sym("in_progress", ""),         ("⟳", Color::Yellow));
-        assert_eq!(ci_sym("queued",      ""),         ("◌", Color::Yellow));
-        assert_eq!(ci_sym("completed",   "success"),  ("✓", Color::Green));
-        assert_eq!(ci_sym("completed",   "failure"),  ("✗", Color::Red));
-        assert_eq!(ci_sym("completed",   "cancelled"),("○", Color::DarkGray));
+        assert_eq!(ci_sym("in_progress", ""), ("⟳", Color::Yellow));
+        assert_eq!(ci_sym("queued", ""), ("◌", Color::Yellow));
+        assert_eq!(ci_sym("completed", "success"), ("✓", Color::Green));
+        assert_eq!(ci_sym("completed", "failure"), ("✗", Color::Red));
+        assert_eq!(ci_sym("completed", "cancelled"), ("○", Color::DarkGray));
     }
 }

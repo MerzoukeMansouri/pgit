@@ -1,5 +1,5 @@
-mod commands;
 mod ci;
+mod commands;
 mod pr;
 
 use anyhow::Result;
@@ -81,11 +81,18 @@ impl App {
         let repos = std::mem::take(&mut self.repos);
         let handles: Vec<_> = repos
             .into_iter()
-            .map(|mut r| tokio::task::spawn_blocking(move || { git::update_status(&mut r); r }))
+            .map(|mut r| {
+                tokio::task::spawn_blocking(move || {
+                    git::update_status(&mut r);
+                    r
+                })
+            })
             .collect();
         let mut updated = Vec::with_capacity(handles.len());
         for h in handles {
-            if let Ok(r) = h.await { updated.push(r); }
+            if let Ok(r) = h.await {
+                updated.push(r);
+            }
         }
         self.repos = updated;
         if self.current_index >= self.repos.len() && !self.repos.is_empty() {
@@ -124,7 +131,10 @@ impl App {
                         }
                     }
                     Err(TryRecvError::Empty) => break,
-                    Err(TryRecvError::Disconnected) => { done = true; break; }
+                    Err(TryRecvError::Disconnected) => {
+                        done = true;
+                        break;
+                    }
                 }
             }
         }
@@ -143,16 +153,23 @@ impl App {
                 match receiver.try_recv() {
                     Ok(item) => out.push(item),
                     Err(TryRecvError::Empty) => break,
-                    Err(TryRecvError::Disconnected) => { done = true; break; }
+                    Err(TryRecvError::Disconnected) => {
+                        done = true;
+                        break;
+                    }
                 }
             }
         }
-        if done { *rx = None; }
+        if done {
+            *rx = None;
+        }
         done
     }
 
     pub fn show_details(&mut self) {
-        if self.repos.is_empty() { return; }
+        if self.repos.is_empty() {
+            return;
+        }
         let r = &self.repos[self.current_index].clone();
         let mut header = vec![
             format!("Branch : {}", r.branch),
