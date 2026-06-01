@@ -4,6 +4,15 @@ K9s-style TUI for managing git operations across multiple repositories.
 
 ## Install
 
+### Homebrew
+
+```bash
+brew tap MerzoukeMansouri/gitp
+brew install gitp
+```
+
+### From source
+
 ```bash
 cargo build --release
 ln -sf $(pwd)/target/release/gitp ~/.local/bin/gitp
