@@ -10,8 +10,8 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  lint:
-    name: Lint
+  clippy:
+    name: Clippy
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -24,7 +24,7 @@ jobs:
 
   test:
     name: Test
-    needs: lint
+    needs: clippy
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
