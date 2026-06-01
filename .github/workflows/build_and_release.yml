@@ -1,13 +1,93 @@
-name: Release
+name: Build & Release
 
 on:
   push:
+    branches: [main]
     tags:
       - 'v*'
+  pull_request:
+    branches: [main]
+
+env:
+  CARGO_TERM_COLOR: always
 
 jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fmt --check
+
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo clippy -- -D warnings
+
+  test:
+    name: Test
+    needs: [lint, clippy]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo test
+
   build:
-    name: Build ${{ matrix.target }}
+    name: Build
+    if: "!startsWith(github.ref, 'refs/tags/')"
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo build --release
+
+  semantic-release:
+    name: Semantic Release
+    if: github.ref == 'refs/heads/main'
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+      - run: |
+          npm install --no-save \
+            semantic-release \
+            @semantic-release/commit-analyzer \
+            @semantic-release/release-notes-generator \
+            @semantic-release/exec \
+            @semantic-release/git \
+            @semantic-release/github
+      - run: npx semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  release-build:
+    name: Release Build ${{ matrix.target }}
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: test
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -38,8 +118,9 @@ jobs:
           path: gitp-${{ github.ref_name }}-${{ matrix.target }}.tar.gz
 
   release:
-    name: GitHub Release
-    needs: build
+    name: Upload Release Assets
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: release-build
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -53,6 +134,7 @@ jobs:
 
   update-tap:
     name: Update Homebrew Tap
+    if: startsWith(github.ref, 'refs/tags/')
     needs: release
     runs-on: ubuntu-latest
     steps:
