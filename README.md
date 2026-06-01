@@ -31,6 +31,5 @@ gitp
 | `l` | Last 10 commits |
 | `d` | Diff |
 | `s` | Detailed status |
-| `1-4` | Filter (all / dirty / sync issues / clean) |
 | `r` | Refresh |
 | `q` | Quit |
