@@ -2,7 +2,8 @@
 
 K9s-style TUI for managing git operations across multiple repositories.
 
-![Rust](https://img.shields.io/badge/rust-stable-orange)
+![Release](https://img.shields.io/github/v/release/MerzoukeMansouri/gitp)
+![Rust](https://img.shields.io/badge/rust-stable-orange?logo=rust&logoColor=white)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 
 ## Features
