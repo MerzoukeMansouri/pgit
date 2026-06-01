@@ -20,7 +20,14 @@ K9s-style TUI for managing git operations across multiple repositories.
 
 ```bash
 brew tap MerzoukeMansouri/gitp
-brew install gitp
+brew install MerzoukeMansouri/gitp/gitp
+```
+
+### Update
+
+```bash
+brew update
+brew upgrade MerzoukeMansouri/gitp/gitp
 ```
 
 ### From source
