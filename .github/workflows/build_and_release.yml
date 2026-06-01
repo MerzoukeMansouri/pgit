@@ -151,7 +151,7 @@ jobs:
 
           mkdir -p Formula
           cat > Formula/pgit.rb << FORMULA
-          class Gitp < Formula
+          class Pgit < Formula
             desc "K9s-style TUI for managing git operations across multiple repositories"
             homepage "https://github.com/MerzoukeMansouri/pgit"
             version "${VERSION#v}"
