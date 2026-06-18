@@ -151,20 +151,46 @@ async fn handle_key(app: &mut App, code: KeyCode) -> Result<bool> {
     }
 
     if app.pr_mode {
+        if app.pr_filter_mode {
+            match code {
+                KeyCode::Esc | KeyCode::Enter => {
+                    app.pr_filter_mode = false;
+                }
+                KeyCode::Backspace => {
+                    app.pr_filter.pop();
+                    app.apply_pr_filter();
+                }
+                KeyCode::Char(c) => {
+                    app.pr_filter.push(c);
+                    app.apply_pr_filter();
+                }
+                _ => {}
+            }
+            return Ok(false);
+        }
         match code {
-            KeyCode::Esc | KeyCode::Char('q') => app.pr_mode = false,
+            KeyCode::Esc | KeyCode::Char('q') => {
+                app.pr_mode = false;
+                app.pr_filter.clear();
+                app.pr_filter_mode = false;
+            }
             KeyCode::Up => {
                 if app.pr_index > 0 {
                     app.pr_index -= 1;
                 }
             }
             KeyCode::Down => {
-                if app.pr_index + 1 < app.pr_list.len() {
+                if app.pr_index + 1 < app.pr_filtered.len() {
                     app.pr_index += 1;
                 }
             }
             KeyCode::Enter | KeyCode::Char('o') => app.pr_open_web(),
             KeyCode::Char('c') => app.pr_checkout(),
+            KeyCode::Char('/') => {
+                app.pr_filter_mode = true;
+                app.pr_filter.clear();
+                app.apply_pr_filter();
+            }
             _ => {}
         }
         return Ok(false);

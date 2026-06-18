@@ -9,7 +9,7 @@ use ratatui::{
 use crate::app::App;
 
 pub(super) fn render_pr_list(f: &mut Frame, app: &App, area: Rect) {
-    let header = Row::new(vec!["Repo", "#", "Title", "Author", "Branch"])
+    let header = Row::new(vec!["Repo", "#", "Title", "Author", "Branch", "Date"])
         .style(
             Style::default()
                 .fg(Color::Cyan)
@@ -18,7 +18,7 @@ pub(super) fn render_pr_list(f: &mut Frame, app: &App, area: Rect) {
         .height(1);
 
     let rows: Vec<Row> = app
-        .pr_list
+        .pr_filtered
         .iter()
         .enumerate()
         .map(|(i, pr)| {
@@ -27,29 +27,45 @@ pub(super) fn render_pr_list(f: &mut Frame, app: &App, area: Rect) {
             } else {
                 Style::default().fg(Color::White)
             };
+            let date = pr.created_at.get(..10).unwrap_or(&pr.created_at).to_string();
             Row::new(vec![
                 Cell::from(pr.repo.clone()).style(Style::default().fg(Color::Cyan)),
                 Cell::from(format!("#{}", pr.number)).style(Style::default().fg(Color::Yellow)),
                 Cell::from(pr.title.clone()),
                 Cell::from(pr.author.clone()).style(Style::default().fg(Color::DarkGray)),
                 Cell::from(pr.branch.clone()).style(Style::default().fg(Color::Blue)),
+                Cell::from(date).style(Style::default().fg(Color::DarkGray)),
             ])
             .style(style)
         })
         .collect();
 
     let widths = [
-        Constraint::Percentage(18),
+        Constraint::Percentage(15),
         Constraint::Length(6),
-        Constraint::Percentage(42),
+        Constraint::Percentage(36),
+        Constraint::Percentage(16),
         Constraint::Percentage(18),
-        Constraint::Percentage(22),
+        Constraint::Percentage(12),
     ];
 
-    let title = if app.pr_list.is_empty() {
+    let title = if app.pr_filtered.is_empty() {
         " Pull Requests ".to_string()
+    } else if !app.pr_filter.is_empty() {
+        format!(
+            " Pull Requests  ({}/{})  filter: {} ",
+            app.pr_filtered.len(),
+            app.pr_list.len(),
+            app.pr_filter
+        )
     } else {
-        format!(" Pull Requests  ({}) ", app.pr_list.len())
+        format!(" Pull Requests  ({}) ", app.pr_filtered.len())
+    };
+
+    let bottom_hint = if app.pr_filter_mode {
+        format!(" filter: {}█ ", app.pr_filter)
+    } else {
+        " Enter/o open  ·  c checkout  ·  / filter by author  ·  Esc close ".to_string()
     };
 
     let mut state = TableState::default();
@@ -68,7 +84,7 @@ pub(super) fn render_pr_list(f: &mut Frame, app: &App, area: Rect) {
                         Style::default().fg(Color::White).add_modifier(Modifier::BOLD),
                     ))
                     .title_bottom(Span::styled(
-                        " Enter/o open in browser  ·  c checkout  ·  Esc close ",
+                        bottom_hint,
                         Style::default().fg(Color::DarkGray),
                     )),
             ),
