@@ -83,10 +83,7 @@ pub(super) fn render_pr_list(f: &mut Frame, app: &App, area: Rect) {
                         title,
                         Style::default().fg(Color::White).add_modifier(Modifier::BOLD),
                     ))
-                    .title_bottom(Span::styled(
-                        bottom_hint,
-                        Style::default().fg(Color::DarkGray),
-                    )),
+                    .title_bottom(Span::styled(bottom_hint, Style::default().fg(Color::DarkGray))),
             ),
         area,
         &mut state,
