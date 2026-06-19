@@ -52,10 +52,7 @@ impl App {
             self.status_line = if self.alert_list.is_empty() {
                 "No open security alerts found.".to_string()
             } else {
-                format!(
-                    "{} alert(s)  ·  Enter open  ·  Esc close",
-                    self.alert_list.len()
-                )
+                format!("{} alert(s)  ·  Enter open  ·  Esc close", self.alert_list.len())
             };
         }
         done
@@ -97,18 +94,9 @@ async fn fetch_dependabot(r: GitRepo, tx: mpsc::UnboundedSender<SecurityAlert>) 
                     .as_str()
                     .unwrap_or("unknown")
                     .to_string(),
-                severity: v["security_advisory"]["severity"]
-                    .as_str()
-                    .unwrap_or("")
-                    .to_string(),
-                summary: v["security_advisory"]["summary"]
-                    .as_str()
-                    .unwrap_or("")
-                    .to_string(),
-                cve_id: v["security_advisory"]["cve_id"]
-                    .as_str()
-                    .unwrap_or("")
-                    .to_string(),
+                severity: v["security_advisory"]["severity"].as_str().unwrap_or("").to_string(),
+                summary: v["security_advisory"]["summary"].as_str().unwrap_or("").to_string(),
+                cve_id: v["security_advisory"]["cve_id"].as_str().unwrap_or("").to_string(),
                 url: v["html_url"].as_str().unwrap_or("").to_string(),
             })
         })() {
@@ -145,10 +133,7 @@ async fn fetch_code_scanning(r: GitRepo, tx: mpsc::UnboundedSender<SecurityAlert
 async fn fetch_secret_scanning(r: GitRepo, tx: mpsc::UnboundedSender<SecurityAlert>) {
     for v in gh_api_lines(&r.path, "/repos/{owner}/{repo}/secret-scanning/alerts").await {
         if let Some(alert) = (|| -> Option<SecurityAlert> {
-            let secret_type = v["secret_type_display_name"]
-                .as_str()
-                .unwrap_or("secret")
-                .to_string();
+            let secret_type = v["secret_type_display_name"].as_str().unwrap_or("secret").to_string();
             Some(SecurityAlert {
                 repo: r.name.clone(),
                 repo_path: r.path.clone(),

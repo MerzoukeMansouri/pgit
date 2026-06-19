@@ -158,10 +158,7 @@ pub(super) fn render_help(f: &mut Frame, area: Rect) {
             Span::styled("X", r),
             Span::styled(" security", d),
         ]),
-        Line::from(vec![
-            Span::styled("o", m),
-            Span::styled(" open repo", d),
-        ]),
+        Line::from(vec![Span::styled("o", m), Span::styled(" open repo", d)]),
         Line::from(vec![
             Span::styled("s", c),
             Span::styled("/", d),
