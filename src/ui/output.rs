@@ -48,8 +48,6 @@ fn render_mini_terminal(f: &mut Frame, app: &App, idx: usize, label: &str, lines
     };
     let border_color = if focused {
         Color::Cyan
-    } else if app.is_running {
-        Color::Yellow
     } else {
         Color::DarkGray
     };
@@ -88,9 +86,7 @@ pub(crate) fn colorize_output_line(line: &str) -> Line<'_> {
             line.trim_start(),
             Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
         ))
-    } else if line.starts_with("⚠") {
-        Line::from(Span::styled(line, Style::default().fg(Color::Yellow)))
-    } else if line.starts_with("✗") {
+    } else if line.starts_with("⚠") || line.starts_with("✗") {
         Line::from(Span::styled(line, Style::default().fg(Color::Red)))
     } else if line.starts_with("✓") {
         Line::from(Span::styled(line, Style::default().fg(Color::Green)))
@@ -115,7 +111,7 @@ mod tests {
     fn colorize_check_ok() {
         assert_eq!(fg(&colorize_output_line("✓ done")), Some(Color::Green));
         assert_eq!(fg(&colorize_output_line("✗ error")), Some(Color::Red));
-        assert_eq!(fg(&colorize_output_line("⚠ warn")), Some(Color::Yellow));
+        assert_eq!(fg(&colorize_output_line("⚠ warn")), Some(Color::Red));
         assert_eq!(fg(&colorize_output_line("Already up to date")), Some(Color::DarkGray));
         assert_eq!(fg(&colorize_output_line("Successfully rebased")), Some(Color::Green));
         assert_eq!(fg(&colorize_output_line("Fast-forward")), Some(Color::Green));

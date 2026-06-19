@@ -19,15 +19,15 @@ K9s-style TUI for managing git operations across multiple repositories.
 ### Homebrew
 
 ```bash
-brew tap MerzoukeMansouri/pgit
-brew install MerzoukeMansouri/pgit/pgit
+brew tap MerzoukeMansouri/homebrew
+brew install MerzoukeMansouri/homebrew/pgit
 ```
 
 ### Update
 
 ```bash
 brew update
-brew upgrade MerzoukeMansouri/pgit/pgit
+brew upgrade MerzoukeMansouri/homebrew/pgit
 ```
 
 ### From source
