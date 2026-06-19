@@ -45,3 +45,18 @@ pub struct PrItem {
     pub url: String,
     pub created_at: String,
 }
+
+#[derive(Clone)]
+#[allow(dead_code)]
+pub struct SecurityAlert {
+    pub repo: String,
+    pub repo_path: std::path::PathBuf,
+    pub number: u64,
+    /// "dep" | "code" | "secret"
+    pub kind: String,
+    pub package: String,
+    pub severity: String,
+    pub summary: String,
+    pub cve_id: String,
+    pub url: String,
+}

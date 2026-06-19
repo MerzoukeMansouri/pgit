@@ -153,6 +153,12 @@ pub(super) fn render_help(f: &mut Frame, area: Rect) {
             sl.clone(),
             Span::styled("A", y),
             Span::styled(" ci runs  ", d),
+            Span::styled("x", r),
+            sl.clone(),
+            Span::styled("X", r),
+            Span::styled(" security", d),
+        ]),
+        Line::from(vec![
             Span::styled("o", m),
             Span::styled(" open repo", d),
         ]),

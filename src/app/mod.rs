@@ -1,6 +1,7 @@
 mod ci;
 mod commands;
 mod pr;
+mod security;
 
 use anyhow::Result;
 use tokio::sync::mpsc::{error::TryRecvError, UnboundedReceiver};
@@ -8,7 +9,7 @@ use tokio::time::Instant;
 
 use crate::{
     git,
-    types::{CiRun, GitRepo, PrItem},
+    types::{CiRun, GitRepo, PrItem, SecurityAlert},
 };
 
 pub struct App {
@@ -38,8 +39,12 @@ pub struct App {
     pub ci_mode: bool,
     pub ci_list: Vec<CiRun>,
     pub ci_index: usize,
+    pub security_mode: bool,
+    pub alert_list: Vec<SecurityAlert>,
+    pub alert_index: usize,
     pub(crate) ci_rx: Option<UnboundedReceiver<CiRun>>,
     pub(crate) pr_rx: Option<UnboundedReceiver<PrItem>>,
+    pub(crate) alert_rx: Option<UnboundedReceiver<SecurityAlert>>,
     pub(crate) rx: Option<UnboundedReceiver<(String, Vec<String>)>>,
 }
 
@@ -77,8 +82,12 @@ impl App {
             ci_mode: false,
             ci_list: vec![],
             ci_index: 0,
+            security_mode: false,
+            alert_list: vec![],
+            alert_index: 0,
             ci_rx: None,
             pr_rx: None,
+            alert_rx: None,
             rx: None,
         })
     }

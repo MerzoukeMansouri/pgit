@@ -68,6 +68,7 @@ async fn run_app(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>, app: &mu
 
         app.drain_ci();
         app.drain_prs();
+        app.drain_alerts();
 
         if !app.is_running && app.auto_refresh && app.last_refresh.elapsed() > Duration::from_secs(30) {
             app.refresh().await;
@@ -100,7 +101,7 @@ async fn run_app(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>, app: &mu
 }
 
 fn handle_click(app: &mut App, col: u16, row: u16, size: Rect) {
-    if app.pr_mode || app.repo_output.is_empty() {
+    if app.pr_mode || app.security_mode || app.repo_output.is_empty() {
         return;
     }
     let rects = ui::pane_rects(size, app.repo_output.len());
@@ -145,6 +146,25 @@ async fn handle_key(app: &mut App, code: KeyCode) -> Result<bool> {
             KeyCode::Enter | KeyCode::Char('o') => app.ci_open_web(),
             KeyCode::Char('l') => app.ci_show_logs(),
             KeyCode::Char('R') => app.ci_rerun(),
+            _ => {}
+        }
+        return Ok(false);
+    }
+
+    if app.security_mode {
+        match code {
+            KeyCode::Esc | KeyCode::Char('q') => app.security_mode = false,
+            KeyCode::Up => {
+                if app.alert_index > 0 {
+                    app.alert_index -= 1;
+                }
+            }
+            KeyCode::Down => {
+                if app.alert_index + 1 < app.alert_list.len() {
+                    app.alert_index += 1;
+                }
+            }
+            KeyCode::Enter | KeyCode::Char('o') => app.alert_open_web(),
             _ => {}
         }
         return Ok(false);
@@ -306,6 +326,8 @@ async fn handle_key(app: &mut App, code: KeyCode) -> Result<bool> {
         KeyCode::Char('A') => app.fetch_runs(true),
         KeyCode::Char('p') => app.fetch_prs(false),
         KeyCode::Char('P') => app.fetch_prs(true),
+        KeyCode::Char('x') => app.fetch_alerts(false),
+        KeyCode::Char('X') => app.fetch_alerts(true),
         KeyCode::Char('o') => app.run_cmd("gh", &["repo", "view", "--web"], false),
         KeyCode::Char('n') => app.run_cmd("gh", &["pr", "create", "--fill", "--web"], false),
 

@@ -22,6 +22,12 @@ pub fn draw(f: &mut Frame, app: &App) {
         widgets::render_status(f, app, status_area);
         return;
     }
+    if app.security_mode {
+        let [table_area, status_area] = split_v(f.area(), [0, 3]);
+        tables::render_alert_list(f, app, table_area);
+        widgets::render_status(f, app, status_area);
+        return;
+    }
     let [left, right] = split_h(f.area(), [30, 70]);
     let [output_area, status_area] = split_v(right, [0, 3]);
     output::render_output(f, app, output_area);
