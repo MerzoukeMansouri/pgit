@@ -10,6 +10,10 @@ jobs:
 
   release:
     needs: ci
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
     uses: MerzoukeMansouri/rust-github-reusable/.github/workflows/release.yml@main
     with:
       binary_name: pgit
