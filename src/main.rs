@@ -159,10 +159,12 @@ async fn handle_key(app: &mut App, code: KeyCode) -> Result<bool> {
                 KeyCode::Backspace => {
                     app.pr_filter.pop();
                     app.apply_pr_filter();
+                    app.pr_index = 0;
                 }
                 KeyCode::Char(c) => {
                     app.pr_filter.push(c);
                     app.apply_pr_filter();
+                    app.pr_index = 0;
                 }
                 _ => {}
             }
@@ -190,6 +192,7 @@ async fn handle_key(app: &mut App, code: KeyCode) -> Result<bool> {
                 app.pr_filter_mode = true;
                 app.pr_filter.clear();
                 app.apply_pr_filter();
+                app.pr_index = 0;
             }
             _ => {}
         }

@@ -83,7 +83,10 @@ impl App {
             .collect();
         filtered.sort_by(|a, b| b.created_at.cmp(&a.created_at));
         self.pr_filtered = filtered;
-        self.pr_index = 0;
+        // clamp index without resetting navigation position
+        if !self.pr_filtered.is_empty() && self.pr_index >= self.pr_filtered.len() {
+            self.pr_index = self.pr_filtered.len() - 1;
+        }
     }
 
     pub fn drain_prs(&mut self) {
