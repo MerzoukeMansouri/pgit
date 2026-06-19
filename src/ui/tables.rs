@@ -200,10 +200,16 @@ pub(super) fn render_alert_list(f: &mut Frame, app: &App, area: Rect) {
         Constraint::Percentage(13),
     ];
 
-    // Count by severity for the title
-    let counts = ["critical", "high", "medium", "low"].map(|sev| {
-        app.alert_list.iter().filter(|a| a.severity == sev).count()
-    });
+    let mut counts = [0usize; 4]; // critical, high, medium, low
+    for a in &app.alert_list {
+        match a.severity.as_str() {
+            "critical" => counts[0] += 1,
+            "high" => counts[1] += 1,
+            "medium" => counts[2] += 1,
+            "low" => counts[3] += 1,
+            _ => {}
+        }
+    }
     let title = if app.alert_list.is_empty() {
         " Security Alerts ".to_string()
     } else {
@@ -254,10 +260,10 @@ fn alert_sym(severity: &str) -> (&'static str, Color) {
 
 fn kind_sym(kind: &str) -> (&'static str, Color) {
     match kind {
-        "dep" => ("DEP    ", Color::Magenta),
-        "code" => ("CODE   ", Color::Blue),
-        "secret" => ("SECRET ", Color::Red),
-        _ => ("?      ", Color::DarkGray),
+        "dep" => ("DEP", Color::Magenta),
+        "code" => ("CODE", Color::Blue),
+        "secret" => ("SECRET", Color::Red),
+        _ => ("?", Color::DarkGray),
     }
 }
 
@@ -297,9 +303,9 @@ mod tests {
 
     #[test]
     fn kind_sym_mapping() {
-        assert_eq!(kind_sym("dep"), ("DEP    ", Color::Magenta));
-        assert_eq!(kind_sym("code"), ("CODE   ", Color::Blue));
-        assert_eq!(kind_sym("secret"), ("SECRET ", Color::Red));
-        assert_eq!(kind_sym("other"), ("?      ", Color::DarkGray));
+        assert_eq!(kind_sym("dep"), ("DEP", Color::Magenta));
+        assert_eq!(kind_sym("code"), ("CODE", Color::Blue));
+        assert_eq!(kind_sym("secret"), ("SECRET", Color::Red));
+        assert_eq!(kind_sym("other"), ("?", Color::DarkGray));
     }
 }

@@ -1,5 +1,5 @@
 use super::App;
-use crate::types::SecurityAlert;
+use crate::types::{GitRepo, SecurityAlert};
 use tokio::sync::mpsc;
 
 impl App {
@@ -16,16 +16,12 @@ impl App {
         let tasks: Vec<_> = repos
             .into_iter()
             .flat_map(|r| {
-                let tx1 = tx.clone();
-                let tx2 = tx.clone();
-                let tx3 = tx.clone();
-                let r1 = r.clone();
                 let r2 = r.clone();
                 let r3 = r.clone();
                 [
-                    tokio::spawn(async move { fetch_dependabot(&r1, tx1).await }),
-                    tokio::spawn(async move { fetch_code_scanning(&r2, tx2).await }),
-                    tokio::spawn(async move { fetch_secret_scanning(&r3, tx3).await }),
+                    tokio::spawn(fetch_dependabot(r, tx.clone())),
+                    tokio::spawn(fetch_code_scanning(r2, tx.clone())),
+                    tokio::spawn(fetch_secret_scanning(r3, tx.clone())),
                 ]
             })
             .collect();
@@ -48,10 +44,10 @@ impl App {
         let done = App::drain_channel(&mut self.alert_rx, &mut received);
         if !received.is_empty() {
             self.alert_list.extend(received);
-            self.alert_list
-                .sort_by_key(|a| (alert_severity_key(&a.severity), kind_key(&a.kind)));
         }
         if done {
+            self.alert_list
+                .sort_by_key(|a| (alert_severity_key(&a.severity), kind_key(&a.kind)));
             self.is_running = false;
             self.status_line = if self.alert_list.is_empty() {
                 "No open security alerts found.".to_string()
@@ -72,25 +68,25 @@ impl App {
     }
 }
 
-async fn fetch_dependabot(r: &crate::types::GitRepo, tx: mpsc::UnboundedSender<SecurityAlert>) {
+async fn gh_api_lines(path: &std::path::Path, endpoint: &str) -> Vec<serde_json::Value> {
     let out = tokio::process::Command::new("gh")
-        .args([
-            "api",
-            "/repos/{owner}/{repo}/dependabot/alerts",
-            "--jq",
-            ".[] | select(.state == \"open\")",
-        ])
-        .current_dir(&r.path)
+        .args(["api", endpoint, "--jq", ".[] | select(.state == \"open\")"])
+        .current_dir(path)
         .output()
         .await;
-    let Ok(o) = out else { return };
+    let Ok(o) = out else { return vec![] };
     if !o.status.success() {
-        return;
+        return vec![];
     }
-    for line in String::from_utf8_lossy(&o.stdout).lines() {
-        let Ok(v) = serde_json::from_str::<serde_json::Value>(line) else {
-            continue;
-        };
+    let stdout = String::from_utf8_lossy(&o.stdout);
+    stdout
+        .lines()
+        .filter_map(|line| serde_json::from_str(line).ok())
+        .collect()
+}
+
+async fn fetch_dependabot(r: GitRepo, tx: mpsc::UnboundedSender<SecurityAlert>) {
+    for v in gh_api_lines(&r.path, "/repos/{owner}/{repo}/dependabot/alerts").await {
         if let Some(alert) = (|| -> Option<SecurityAlert> {
             Some(SecurityAlert {
                 repo: r.name.clone(),
@@ -121,25 +117,8 @@ async fn fetch_dependabot(r: &crate::types::GitRepo, tx: mpsc::UnboundedSender<S
     }
 }
 
-async fn fetch_code_scanning(r: &crate::types::GitRepo, tx: mpsc::UnboundedSender<SecurityAlert>) {
-    let out = tokio::process::Command::new("gh")
-        .args([
-            "api",
-            "/repos/{owner}/{repo}/code-scanning/alerts",
-            "--jq",
-            ".[] | select(.state == \"open\")",
-        ])
-        .current_dir(&r.path)
-        .output()
-        .await;
-    let Ok(o) = out else { return };
-    if !o.status.success() {
-        return;
-    }
-    for line in String::from_utf8_lossy(&o.stdout).lines() {
-        let Ok(v) = serde_json::from_str::<serde_json::Value>(line) else {
-            continue;
-        };
+async fn fetch_code_scanning(r: GitRepo, tx: mpsc::UnboundedSender<SecurityAlert>) {
+    for v in gh_api_lines(&r.path, "/repos/{owner}/{repo}/code-scanning/alerts").await {
         if let Some(alert) = (|| -> Option<SecurityAlert> {
             let severity = v["rule"]["security_severity_level"]
                 .as_str()
@@ -153,10 +132,7 @@ async fn fetch_code_scanning(r: &crate::types::GitRepo, tx: mpsc::UnboundedSende
                 kind: "code".to_string(),
                 package: v["rule"]["id"].as_str().unwrap_or("unknown").to_string(),
                 severity,
-                summary: v["rule"]["description"]
-                    .as_str()
-                    .unwrap_or("")
-                    .to_string(),
+                summary: v["rule"]["description"].as_str().unwrap_or("").to_string(),
                 cve_id: String::new(),
                 url: v["html_url"].as_str().unwrap_or("").to_string(),
             })
@@ -166,28 +142,8 @@ async fn fetch_code_scanning(r: &crate::types::GitRepo, tx: mpsc::UnboundedSende
     }
 }
 
-async fn fetch_secret_scanning(
-    r: &crate::types::GitRepo,
-    tx: mpsc::UnboundedSender<SecurityAlert>,
-) {
-    let out = tokio::process::Command::new("gh")
-        .args([
-            "api",
-            "/repos/{owner}/{repo}/secret-scanning/alerts",
-            "--jq",
-            ".[] | select(.state == \"open\")",
-        ])
-        .current_dir(&r.path)
-        .output()
-        .await;
-    let Ok(o) = out else { return };
-    if !o.status.success() {
-        return;
-    }
-    for line in String::from_utf8_lossy(&o.stdout).lines() {
-        let Ok(v) = serde_json::from_str::<serde_json::Value>(line) else {
-            continue;
-        };
+async fn fetch_secret_scanning(r: GitRepo, tx: mpsc::UnboundedSender<SecurityAlert>) {
+    for v in gh_api_lines(&r.path, "/repos/{owner}/{repo}/secret-scanning/alerts").await {
         if let Some(alert) = (|| -> Option<SecurityAlert> {
             let secret_type = v["secret_type_display_name"]
                 .as_str()
