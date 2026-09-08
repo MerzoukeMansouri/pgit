@@ -49,14 +49,18 @@ pub struct App {
 }
 
 impl App {
-    pub fn new(base_path: &str) -> Result<Self> {
-        let repos = git::find_repos(base_path)?;
-        Ok(Self {
-            base_path: std::path::Path::new(base_path)
+    pub fn new(paths: &[String]) -> Result<Self> {
+        let repos = git::find_repos_in_paths(paths)?;
+        let label = match paths {
+            [single] => std::path::Path::new(single)
                 .file_name()
                 .and_then(|n| n.to_str())
-                .unwrap_or(base_path)
+                .unwrap_or(single)
                 .to_string(),
+            _ => format!("{} locations", paths.len()),
+        };
+        Ok(Self {
+            base_path: label,
             repos,
             current_index: 0,
             repo_output: vec![],
