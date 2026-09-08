@@ -46,11 +46,7 @@ fn render_mini_terminal(f: &mut Frame, app: &App, idx: usize, label: &str, lines
     } else {
         String::new()
     };
-    let border_color = if focused {
-        Color::Cyan
-    } else {
-        Color::DarkGray
-    };
+    let border_color = if focused { Color::Cyan } else { Color::DarkGray };
     let title_style = if focused {
         Style::default()
             .fg(Color::Black)
