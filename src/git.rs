@@ -1,6 +1,29 @@
 use crate::types::{GitRepo, RepoStatus};
 use anyhow::Result;
-use std::{fs, process::Command};
+use std::{
+    collections::HashSet,
+    fs,
+    path::{Path, PathBuf},
+    process::Command,
+};
+
+fn make_repo(path: PathBuf) -> GitRepo {
+    GitRepo {
+        name: path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("unknown")
+            .to_string(),
+        path,
+        status: RepoStatus::Clean,
+        branch: "unknown".to_string(),
+        ahead: 0,
+        behind: 0,
+        modified: 0,
+        staged: 0,
+        untracked: 0,
+    }
+}
 
 pub fn find_repos(base_path: &str) -> Result<Vec<GitRepo>> {
     let mut repos = Vec::new();
@@ -8,21 +31,37 @@ pub fn find_repos(base_path: &str) -> Result<Vec<GitRepo>> {
     for entry in fs::read_dir(base_path)? {
         let path = entry?.path();
         if path.is_dir() && path.join(".git").exists() {
-            repos.push(GitRepo {
-                name: path
-                    .file_name()
-                    .and_then(|n| n.to_str())
-                    .unwrap_or("unknown")
-                    .to_string(),
-                path,
-                status: RepoStatus::Clean,
-                branch: "unknown".to_string(),
-                ahead: 0,
-                behind: 0,
-                modified: 0,
-                staged: 0,
-                untracked: 0,
-            });
+            repos.push(make_repo(path));
+        }
+    }
+
+    repos.sort_by(|a, b| a.name.cmp(&b.name));
+    Ok(repos)
+}
+
+/// Resolves a list of user-supplied paths into repos. Each path that is
+/// itself a git repo is added directly; each path that is a plain directory
+/// is scanned one level deep for git repos (same as `find_repos`).
+/// Duplicate repos (by canonical path) are collapsed.
+pub fn find_repos_in_paths(paths: &[String]) -> Result<Vec<GitRepo>> {
+    let mut repos = Vec::new();
+    let mut seen = HashSet::new();
+
+    for base in paths {
+        let base_path = Path::new(base);
+        if base_path.join(".git").exists() {
+            let canon = fs::canonicalize(base_path).unwrap_or_else(|_| base_path.to_path_buf());
+            if seen.insert(canon) {
+                repos.push(make_repo(base_path.to_path_buf()));
+            }
+            continue;
+        }
+
+        for repo in find_repos(base)? {
+            let canon = fs::canonicalize(&repo.path).unwrap_or_else(|_| repo.path.clone());
+            if seen.insert(canon) {
+                repos.push(repo);
+            }
         }
     }
 

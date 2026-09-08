@@ -11,6 +11,7 @@
 )]
 
 mod app;
+mod config;
 mod engine;
 mod git;
 mod types;
@@ -29,11 +30,21 @@ use tokio::time::interval;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let base = std::env::current_dir()?;
-    let mut app = App::new(base.to_str().unwrap())?;
+    let args: Vec<String> = std::env::args().skip(1).collect();
+    let paths = if !args.is_empty() {
+        if let Err(e) = config::save(&args) {
+            eprintln!("Warning: could not save config: {e}");
+        }
+        args
+    } else if let Some(saved) = config::load().filter(|p| !p.is_empty()) {
+        saved
+    } else {
+        vec![std::env::current_dir()?.to_string_lossy().to_string()]
+    };
+    let mut app = App::new(&paths)?;
 
     if app.repos.is_empty() {
-        eprintln!("No git repositories found in current directory");
+        eprintln!("No git repositories found in: {}", paths.join(", "));
         return Ok(());
     }
 
