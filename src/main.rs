@@ -306,8 +306,35 @@ async fn handle_key(app: &mut App, code: KeyCode) -> Result<bool> {
         }
     }
 
+    if app.repo_filter_mode {
+        match code {
+            KeyCode::Esc => {
+                app.repo_filter_mode = false;
+                app.repo_filter.clear();
+                app.apply_repo_filter();
+            }
+            KeyCode::Enter => app.repo_filter_mode = false,
+            KeyCode::Backspace => {
+                app.repo_filter.pop();
+                app.apply_repo_filter();
+            }
+            KeyCode::Char(c) => {
+                app.repo_filter.push(c);
+                app.apply_repo_filter();
+            }
+            KeyCode::Up => app.previous(),
+            KeyCode::Down => app.next(),
+            _ => {}
+        }
+        return Ok(false);
+    }
+
     match code {
         KeyCode::Char('q') => return Ok(true),
+        KeyCode::Char('/') => {
+            app.repo_filter_mode = true;
+            app.status_line = "filter repos  ·  Enter keep  ·  Esc clear".to_string();
+        }
         KeyCode::Char('h') => app.show_help = !app.show_help,
         KeyCode::Esc => app.focused_pane = None,
         KeyCode::Up => app.previous(),

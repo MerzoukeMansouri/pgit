@@ -9,7 +9,7 @@ use ratatui::{
 use crate::app::App;
 
 pub(super) fn render_pr_list(f: &mut Frame, app: &App, area: Rect) {
-    let header = Row::new(vec!["Repo", "#", "Title", "Author", "Branch", "Date"])
+    let header = Row::new(vec!["#", "Repo", "Title", "Author", "Status", "Date"])
         .style(
             Style::default()
                 .fg(Color::Cyan)
@@ -29,11 +29,11 @@ pub(super) fn render_pr_list(f: &mut Frame, app: &App, area: Rect) {
             };
             let date = pr.created_at.get(..10).unwrap_or(&pr.created_at).to_string();
             Row::new(vec![
-                Cell::from(pr.repo.clone()).style(Style::default().fg(Color::Cyan)),
                 Cell::from(format!("#{}", pr.number)).style(Style::default().fg(Color::Yellow)),
+                Cell::from(pr.repo.clone()).style(Style::default().fg(Color::Cyan)),
                 Cell::from(pr.title.clone()),
                 Cell::from(pr.author.clone()).style(Style::default().fg(Color::DarkGray)),
-                Cell::from(pr.branch.clone()).style(Style::default().fg(Color::Blue)),
+                Cell::from(pr.status.clone()).style(Style::default().fg(Color::Blue)),
                 Cell::from(date).style(Style::default().fg(Color::DarkGray)),
             ])
             .style(style)
@@ -41,8 +41,8 @@ pub(super) fn render_pr_list(f: &mut Frame, app: &App, area: Rect) {
         .collect();
 
     let widths = [
-        Constraint::Percentage(15),
         Constraint::Length(6),
+        Constraint::Percentage(15),
         Constraint::Percentage(36),
         Constraint::Percentage(16),
         Constraint::Percentage(18),

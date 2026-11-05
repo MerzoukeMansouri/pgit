@@ -35,11 +35,11 @@ pub(super) fn render_title(f: &mut Frame, app: &App, area: Rect) {
 }
 
 pub(super) fn render_repo_list(f: &mut Frame, app: &App, area: Rect) {
-    let items: Vec<ListItem> = app
-        .repos
+    let visible: Vec<usize> = (0..app.repos.len()).filter(|&i| app.repo_matches(i)).collect();
+    let items: Vec<ListItem> = visible
         .iter()
-        .enumerate()
-        .map(|(i, r)| {
+        .map(|&i| {
+            let r = &app.repos[i];
             let (sym, color) = repo_sym(&r.status);
             let selected = i == app.current_index;
             let name_style = if selected {
@@ -85,10 +85,15 @@ pub(super) fn render_repo_list(f: &mut Frame, app: &App, area: Rect) {
         .collect();
 
     let mut state = ListState::default();
-    state.select(Some(app.current_index));
+    state.select(visible.iter().position(|&i| i == app.current_index));
+    let title = if app.repo_filter_mode || !app.repo_filter.is_empty() {
+        format!("Repositories  filter: {}{}", app.repo_filter, if app.repo_filter_mode { "█" } else { "" })
+    } else {
+        "Repositories".to_string()
+    };
     f.render_stateful_widget(
         List::new(items)
-            .block(block("Repositories", true))
+            .block(block(&title, true))
             .highlight_style(Style::default()),
         area,
         &mut state,

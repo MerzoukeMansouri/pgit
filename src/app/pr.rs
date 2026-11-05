@@ -23,7 +23,7 @@ impl App {
                             "pr",
                             "list",
                             "--json",
-                            "number,title,author,headRefName,url,createdAt",
+                            "number,title,author,headRefName,url,createdAt,isDraft,reviewDecision",
                             "--limit",
                             "50",
                         ])
@@ -46,6 +46,13 @@ impl App {
                                 title: v["title"].as_str()?.to_string(),
                                 author: v["author"]["login"].as_str().unwrap_or("unknown").to_string(),
                                 branch: v["headRefName"].as_str()?.to_string(),
+                                status: match (v["isDraft"].as_bool().unwrap_or(false), v["reviewDecision"].as_str()) {
+                                    (true, _) => "Draft",
+                                    (false, Some("APPROVED")) => "Approved",
+                                    (false, Some("CHANGES_REQUESTED")) => "Changes",
+                                    _ => "Open",
+                                }
+                                .to_string(),
                                 url: v["url"].as_str()?.to_string(),
                                 created_at: v["createdAt"].as_str().unwrap_or("").to_string(),
                             })

@@ -17,6 +17,8 @@ pub struct App {
     pub repos: Vec<GitRepo>,
     pub current_index: usize,
     pub repo_output: Vec<(String, Vec<String>)>,
+    pub repo_filter: String,
+    pub repo_filter_mode: bool,
     pub status_line: String,
     pub last_refresh: Instant,
     pub auto_refresh: bool,
@@ -64,6 +66,8 @@ impl App {
             repos,
             current_index: 0,
             repo_output: vec![],
+            repo_filter: String::new(),
+            repo_filter_mode: false,
             status_line: "Loading...".to_string(),
             last_refresh: Instant::now(),
             auto_refresh: true,
@@ -121,19 +125,38 @@ impl App {
         self.status_line = format!("{} repos  ·  press h for help", self.repos.len());
     }
 
+    pub fn repo_matches(&self, index: usize) -> bool {
+        let f = self.repo_filter.to_lowercase();
+        f.is_empty() || self.repos[index].name.to_lowercase().contains(&f)
+    }
+
+    pub fn apply_repo_filter(&mut self) {
+        if !self.repos.is_empty() && !self.repo_matches(self.current_index) {
+            if let Some(i) = (0..self.repos.len()).find(|&i| self.repo_matches(i)) {
+                self.current_index = i;
+            }
+        }
+    }
+
     pub fn next(&mut self) {
-        if !self.repos.is_empty() {
-            self.current_index = (self.current_index + 1) % self.repos.len();
+        let n = self.repos.len();
+        for step in 1..=n {
+            let i = (self.current_index + step) % n;
+            if self.repo_matches(i) {
+                self.current_index = i;
+                return;
+            }
         }
     }
 
     pub fn previous(&mut self) {
-        if !self.repos.is_empty() {
-            self.current_index = if self.current_index == 0 {
-                self.repos.len() - 1
-            } else {
-                self.current_index - 1
-            };
+        let n = self.repos.len();
+        for step in 1..=n {
+            let i = (self.current_index + n - step) % n;
+            if self.repo_matches(i) {
+                self.current_index = i;
+                return;
+            }
         }
     }
 

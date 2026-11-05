@@ -42,6 +42,7 @@ pub struct PrItem {
     pub title: String,
     pub author: String,
     pub branch: String,
+    pub status: String,
     pub url: String,
     pub created_at: String,
 }
