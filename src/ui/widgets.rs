@@ -87,7 +87,11 @@ pub(super) fn render_repo_list(f: &mut Frame, app: &App, area: Rect) {
     let mut state = ListState::default();
     state.select(visible.iter().position(|&i| i == app.current_index));
     let title = if app.repo_filter_mode || !app.repo_filter.is_empty() {
-        format!("Repositories  filter: {}{}", app.repo_filter, if app.repo_filter_mode { "█" } else { "" })
+        format!(
+            "Repositories  filter: {}{}",
+            app.repo_filter,
+            if app.repo_filter_mode { "█" } else { "" }
+        )
     } else {
         "Repositories".to_string()
     };
